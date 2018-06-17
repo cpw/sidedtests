@@ -1,6 +1,7 @@
 package cpw.mods.sidedtest;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -9,6 +10,14 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 class SidedExecutorTest {
+    @BeforeAll
+    public static void loadBadClass() {
+        try {
+            Class.forName("cpw.mods.sidedtest.BadClass");
+        } catch (Throwable e) {
+            // Expected
+        }
+    }
     public static class GoodProxy {
         static Object PROXY = SidedExecutor.runSided(() -> GoodClass::new, () -> BadClass::new);
     }
@@ -29,7 +38,7 @@ class SidedExecutorTest {
         Executable badSide = () -> SidedExecutor.runOn(SidedExecutor.Side.CLIENT, badSupplier);
 
         Assertions.assertAll(goodSide);
-        Assertions.assertThrows(ExceptionInInitializerError.class, badSide);
+        Assertions.assertThrows(NoClassDefFoundError.class, badSide);
     }
 
     @Test
@@ -40,7 +49,7 @@ class SidedExecutorTest {
         Assertions.assertAll(runSided);
         SidedExecutor.side = SidedExecutor.Side.SERVER;
         // when we call for server side, we're bad
-        Assertions.assertThrows(ExceptionInInitializerError.class, runSided);
+        Assertions.assertThrows(NoClassDefFoundError.class, runSided);
     }
 
     @Test
@@ -52,6 +61,6 @@ class SidedExecutorTest {
         Executable badProxy = () -> BadProxy.PROXY.toString();
         SidedExecutor.side = SidedExecutor.Side.CLIENT;
         // when we call for client side, we're good
-        Assertions.assertThrows(ExceptionInInitializerError.class, badProxy);
+        Assertions.assertThrows(NoClassDefFoundError.class, badProxy);
     }
 }
